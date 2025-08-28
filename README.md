@@ -49,7 +49,7 @@
     - 安装 [Tampermonkey](https://www.tampermonkey.net/)。
 
 2.  **安装脚本**：
-    - 点击本项目中的 [`UserScript.js`](./UserScript.js) 文件。
+    - 复制或下载本项目中的 [`UserScript.js`](./UserScript.js) 文件。
     - 到 Tampermonkey等脚本管理器 安装这个`UserScript.js`。
 
 ### 第二部分：（可选）配置本地 Python 服务器
