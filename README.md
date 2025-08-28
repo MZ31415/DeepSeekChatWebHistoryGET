@@ -1,0 +1,2 @@
+# DeepSeekChatWebHistoryGET
+一个用于提取DeepseekChat网页版聊天记录的浏览器用户脚本，以及用于保存文件的python服务器代码。
