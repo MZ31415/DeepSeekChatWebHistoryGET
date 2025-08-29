@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
+"""- ω -
 Deepseek Chat History GETer v1.0 
 接收油猴脚本数据, 得到DeepSeek网站聊天记录, 并保存为JSON和Markdown格式
 来自 github.com/mz31415/DeepSeekChatWebHistoryGET
 """
 
-import json
-import logging
-import os
+import logging, json, os
 from datetime import datetime
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
@@ -17,7 +15,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('chat_server.log', encoding='utf-8'),
+        logging.FileHandler('Deepseek_Chat_History_GET.log', encoding='utf-8'),
         logging.StreamHandler()
     ]
 )
@@ -96,13 +94,15 @@ class ChatRequestHandler(BaseHTTPRequestHandler):
             # 写入每条消息
             for message in chat_data.get('messages', []):
                 message_type = message.get('role', '')
+
+                index = message.get('index','') + 1
                 content = message.get('content', '')
                 
                 if message_type == 'assistant':
-                    f.write(f"# AI助手\n\n")
+                    f.write(f"> # {index} AI\n\n")
                     f.write(f"{content}\n\n\n")
                 else:
-                    f.write(f"# 用户\n\n")
+                    f.write(f"> # {index} 用户\n\n")
                     f.write(f"{content}\n\n\n")
                 
                 f.write("---\n\n")
@@ -128,29 +128,34 @@ class ChatRequestHandler(BaseHTTPRequestHandler):
     
     def log_message(self, format, *args):
         """自定义日志格式"""
-        logging.info(format,*args)
+        logging.info(format % args)
+        print()
 
 def run_server(port=3141):
     """启动服务器"""
     server_address = ('', port)
     httpd = HTTPServer(server_address, ChatRequestHandler)
-    print("来自 http://github.com/mz31415/DeepSeekChatWebHistoryGET")
-    print("给个 star 吧！ ヽ(≧ω≦*)♪")
-    print("\n       ╱|、    \n"\
-            "      (˚ˎ 。7  \n"\
-            "      |、˜ 〵  \n"\
-            "      じしˍ,)ノ\n")
+    logging.info("\n来自 http://github.com/mz31415/DeepSeekChatWebHistoryGET\n"\
+                    "给个 star 吧！ ヽ(≧ω≦*)♪\n\n"\
+                    "       ╱|、_   \n"\
+                    "      (˚_ 。7  \n"\
+                    "      |、˜ 〵  \n"\
+                    "      じしˍ,)ノ\n"
+                )
     
     logging.info("聊天记录服务器启动中...")
     logging.info(f"聊天记录服务器启动在端口 {port}")
-    logging.info(f"保存路径: {os.path.dirname(__file__)}\\DSchatHistory\\")
-    logging.info("按 Ctrl+C 终止服务器\n")
+    logging.info(f"文件保存路径: {os.path.dirname(__file__)}\\DSchatHistory\\")
+    logging.info("按 Ctrl+C 终止服务器")
+    logging.info("如果上传时没有响应可以回车试试\n")
     
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
         logging.info("(｡・ω・｡) 服务器正在关闭...")
         httpd.shutdown()
+        input("服务器已关闭。按回车键退出。\n(:")
+        exit(0)
 
 if __name__ == '__main__':
     run_server()

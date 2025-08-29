@@ -26,8 +26,13 @@
     const AButtonIcon = 'div.ds-button__icon'; // 功能按钮图标名称
     const AButtonSpan = 'span.ad0c98fd'; // 功能按钮文本名称
 
+    let canCopy = true; // 是否允许复制
+    let isCopying = false; // 是否正在复制
+    let progress = 0; // 进度(*100,百分比)
+    let len = 0; // 用于验证的总消息数目
+
     function copyAllChatMessages() {
-        showNotification('(๑•̀ㅂ•́)و✧正在提取聊天记录，请稍候...');
+        // showNotification('(๑•̀ㅂ•́)و✧正在提取聊天记录，请稍候...'); // 这句提示与进度条的显示冲突
         console.log('开始提取聊天记录...');
 
         // 重置存储数组
@@ -38,6 +43,9 @@
         if (!mainContainer) {
             console.error(`找不到主容器 ${TheMain}`);
             showNotification('错误: 找不到聊天容器 ( •́ _ •̀)？');
+            cancel();
+            canCopy = true;
+            isCopying = false;
             return;
         }
 
@@ -48,14 +56,19 @@
 
         // 查找所有匹配的聊天消息容器
         const chatContainers = mainContainer.querySelectorAll(ChatMaessages);
-        console.log(`找到 ${chatContainers.length} 条聊天消息`);
+        len = chatContainers.length;
+        console.log(`找到 ${len} 条聊天消息`);
 
-        if (chatContainers.length === 0) {
+        if (len === 0) {
             console.warn('未找到聊天消息');
             showNotification('( º﹃º ) 未找到聊天消息');
+            cancel();
+            canCopy = true;
+            isCopying = false;
             return;
         }
 
+        progress = 0;
         // 依次处理每条消息
         processMessagesSequentially(chatContainers, 0, chatTitle);
     }
@@ -66,7 +79,31 @@
     }
 
     function processMessagesSequentially(containers, index, chatTitle) {
+        if (!canCopy){
+            console.log('用户取消了操作');
+            showNotification('(˘･_･˘) 已取消提取操作');
+            canCopy = true;
+            isCopying = false;
+            return;
+        }
+        if (index !== copiedContents.length){
+            console.warn(`消息索引不匹配: 预期 ${copiedContents.length}, 实际 ${index}`);
+            showNotification(`( •́ὤ•̀) 消息数目不匹配,请误切换对话.`);
+            cancel();
+            canCopy = true;
+            isCopying = false;
+            return;
+        }
+
         if (index >= containers.length) {
+            if (copiedContents.length !== len){
+                console.warn(`最终消息数目不匹配: 预期 ${len}, 实际 ${copiedContents.length}`);
+                showNotification(`( •́ὤ•̀) 消息数目不匹配,请误切换对话.`);
+                cancel();
+                canCopy = true;
+                isCopying = false;
+                return;
+            }
             console.log('所有消息复制完成！');
             console.log(`共复制 ${copiedContents.length} 条消息`);
 
@@ -76,16 +113,30 @@
             console.log(`assistant: ${aiCount} 条, user: ${userCount} 条`);
 
             uploadToServer(chatTitle);
+
+            cancel();
+            canCopy = true;
+            isCopying = false;
             return;
         }
+        console.log(`已处理 ${index} / ${containers.length} 条消息，继续中...`);
+
+        let newprogress = Math.round(100*index/containers.length);
+        if (progress !== newprogress){
+            showNotification(`进度条${progress}%`);
+            progress = newprogress;
+        }
+        
 
         const container = containers[index];
         const copyButton = container.querySelector(CopyButton);
 
         if (!copyButton) {
             console.warn(`第 ${index + 1} 条消息未找到复制按钮, 或可通过取消其的编辑状态解决.`);
-            showNotification(`( •́ὤ•̀) 第 ${index + 1} 条消息状态错误`)
-            processMessagesSequentially(containers, index + 1, chatTitle);
+            showNotification(`( •́ὤ•̀) 第 ${index + 1} 条消息状态错误, 或可通过取消其的编辑状态解决.`)
+            cancel();
+            canCopy = true;
+            isCopying = false;
             return;
         }
 
@@ -111,7 +162,7 @@
         // 添加延迟确保复制操作完成
         setTimeout(() => {
             processMessagesSequentially(containers, index + 1, chatTitle);
-        }, 300);
+        }, 50);
     }
 
     function determineMessageType(container) {
@@ -215,7 +266,7 @@
         const container = document.querySelector(Buttons);
         if (!container) {
             console.log('未找到功能按钮容器，“聊天记录提取”按钮添加失败');
-            showNotification('Ծ‸Ծ “聊天记录提取”按钮添加失败，请使用F6键。')
+            showNotification('Ծ‸Ծ “聊天记录提取”按钮添加失败，请使用F6键。');
             return;
         }
 
@@ -228,30 +279,30 @@
         }
         
         // 克隆第一个按钮作为模板
-        const templateButton = existingButtons[0].cloneNode(true);
+        window.templateButton = existingButtons[0].cloneNode(true);
         
         // 删除图标子元素
-        const iconDiv = templateButton.querySelector(AButtonIcon);
+        const iconDiv = window.templateButton.querySelector(AButtonIcon);
         if (iconDiv) {
             iconDiv.remove();
         }
         
         // 修改文本内容
-        const span = templateButton.querySelector(AButtonSpan);
+        const span = window.templateButton.querySelector(AButtonSpan);
         if (span) {
             span.textContent = '聊天记录提取';
         }
         
         // 添加点击事件
-        templateButton.addEventListener('click', copyAllChatMessages);
+        window.templateButton.addEventListener('click', checkAndCopy);
         
         // 设置新按钮样式
-        templateButton.style.position = 'absolute';
-        templateButton.style.right = '10%';
+        window.templateButton.style.position = 'absolute';
+        window.templateButton.style.right = '10%';
         
         // 添加到容器中
         container.style.position = 'relative'; // 确保容器是相对定位
-        container.appendChild(templateButton);
+        container.appendChild(window.templateButton);
     }
 
     // 等待页面加载完成
@@ -261,14 +312,35 @@
         setTimeout(initButton, 1000);
     }
 
+    function checkAndCopy(){
+        const span = window.templateButton.querySelector(AButtonSpan);
+        span.textContent = ' 取 消 ';
+        window.templateButton.removeEventListener('click', checkAndCopy);
+        window.templateButton.addEventListener('click', cancel);
+        isCopying = true;
+        copyAllChatMessages();
+    }
+    
+    function cancel(){
+        canCopy = false;
+        const span = window.templateButton.querySelector(AButtonSpan);
+        span.textContent = '聊天记录提取';
+        window.templateButton.removeEventListener('click', cancel);
+        window.templateButton.addEventListener('click', checkAndCopy);
+    }
+
     // 监听F6键
     document.addEventListener('keydown', function(event) {
         if (event.key === 'F6') {
             // 阻止F6默认行为（如有）
             event.preventDefault();
             event.stopPropagation();
+            if (isCopying){
+                cancel()
+            } else{
+                checkAndCopy()
+            }
 
-            copyAllChatMessages() // 开始复制聊天消息
             
         }
     });
@@ -277,3 +349,4 @@
     console.log('本脚本来自 http://github.com/mz31415/DeepSeekChatWebHistoryGET')
     console.log('DeepSeek聊天记录提取脚本已加载，按“聊天记录提取”按钮 或 按F6键 请求提取聊天记录');
 })();
+// - ω -
