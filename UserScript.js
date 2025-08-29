@@ -194,35 +194,37 @@
 
         console.log('正在上传聊天记录到服务器...');
         showNotification('٩(๑•̀ω•́๑)۶ 正在上传聊天记录...');
-
+        let dic = {
+            title: chatTitle,
+            timestamp: new Date().toISOString(),
+            total_messages: copiedContents.length,
+            messages: copiedContents
+        }
         GM_xmlhttpRequest({
             method: 'POST',
             url: SERVER_URL,
             headers: {
                 'Content-Type': 'application/json'
             },
-            data: JSON.stringify({
-                title: chatTitle,
-                timestamp: new Date().toISOString(),
-                total_messages: copiedContents.length,
-                messages: copiedContents
-            }),
+            data: JSON.stringify(dic),
             onload: function(response) {
                 if (response.status === 200) {
                     console.log('上传成功');
                     showNotification('(≧∀≦)ゞ 聊天记录上传成功！请到服务器查看是否保存成功。');
                 } else {
-                    console.error('上传失败:', response.status);
-                    showNotification('(*ﾟーﾟ) 上传失败，请检查服务器。或按F12到控制台查看日志。');
+                    console.error('上传失败0:', response.status);
+                    showNotification('(*ﾟーﾟ) 上传失败，请检查服务器。已复制到你的剪贴板。');
+                    copyToClipboard(JSON.stringify(dic));
                     console.log("提取的历史记录如下:");
-                    console.log(copiedContents);
+                    console.log(dic);
                 }
             },
             onerror: function(error) {
-                console.error('上传失败:', error);
-                showNotification('(*ﾟーﾟ) 上传失败，请检查服务器。或按F12到控制台查看日志。');
+                console.error('上传失败1:', error);
+                showNotification('(*ﾟーﾟ) 上传失败，请检查服务器。已复制到你的剪贴板。');
+                copyToClipboard(JSON.stringify(dic));
                 console.log("提取的历史记录如下:");
-                console.log(copiedContents);
+                console.log(dic);
             },
             timeout: 10000
         });
@@ -328,6 +330,24 @@
         window.templateButton.removeEventListener('click', cancel);
         window.templateButton.addEventListener('click', checkAndCopy);
     }
+
+    //拷贝到剪贴板
+    function copyToClipboard(text) {
+        // 方法1: 使用现代Clipboard API（推荐）
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(() => {
+                console.log('内容已成功复制到剪贴板');
+                
+            }).catch(err => {
+                console.error('使用Clipboard API复制失败:', err);
+                showNotification('复制错误！');
+            });
+        } else {
+            console.warn('无法使用Clipboard API复制')
+            showNotification('复制错误！');
+        }
+    }
+
 
     // 监听F6键
     document.addEventListener('keydown', function(event) {
