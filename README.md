@@ -95,14 +95,14 @@
 
 ```json
 {
-  "title": "string",               // 对话标题
-  "timestamp": "string",          // ISO 8601时间戳
-  "total_messages": "number",     // 消息总数
-  "messages": [                   // 消息数组
+  "title": "string",
+  "timestamp": "string",
+  "total_messages": "number",
+  "messages": [
     {
-      "index": "number",          // 消息序号（从0开始）
-      "role": "string",           // 角色标识（如：user、assistant）
-      "content": "string"         // 消息内容
+      "index": "number",
+      "role": "string",
+      "content": "string"
     }
   ]
 }
